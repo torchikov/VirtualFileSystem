@@ -7,12 +7,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 public class VFSImpl implements VFS {
@@ -24,7 +23,7 @@ public class VFSImpl implements VFS {
             throw new NoSuchFileException("File or directory fo path " + rootDirectory + " doesn't exist");
         }
 
-        if (!Files.isDirectory(Paths.get(rootDirectory))){
+        if (!Files.isDirectory(Paths.get(rootDirectory))) {
             throw new UnsupportedOperationException("You can't set files as a root directory");
         }
         this.rootDirectory = rootDirectory;
@@ -151,6 +150,26 @@ public class VFSImpl implements VFS {
     @Override
     public Iterator<String> getIterator(String startDirectory) throws NoSuchFileException {
         return new FileIterator(startDirectory);
+    }
+
+
+    @Override
+    public List<String> getContentsFromDirectory(String directory) throws IOException {
+        Path resultPath = Paths.get(rootDirectory + directory);
+
+        if (Files.notExists(resultPath)) {
+            throw new NoSuchFileException("Directory fo path " + resultPath.toAbsolutePath().toString() + " doesn't exist");
+        }
+
+        if (!Files.isDirectory(resultPath)) {
+            throw new UnsupportedOperationException("This operation can't be apply for files");
+        }
+
+        List<String> contents = new LinkedList<>();
+
+        Files.walk(resultPath, 1).forEach(path -> contents.add(path.getFileName().toString()));
+
+        return contents;
     }
 
     @Override

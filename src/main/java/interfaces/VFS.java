@@ -1,7 +1,9 @@
 package interfaces;
 
+import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.util.Iterator;
+import java.util.List;
 
 public interface VFS {
 
@@ -20,6 +22,8 @@ public interface VFS {
     void setRootDirectory(String rootDirectory);
 
     String getRootDirectory();
+
+    List<String> getContentsFromDirectory(String directory) throws IOException;
 
 
 }
