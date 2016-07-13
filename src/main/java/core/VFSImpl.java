@@ -1,13 +1,16 @@
 package core;
 
+import com.sun.istack.internal.NotNull;
 import interfaces.VFS;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -16,45 +19,63 @@ public class VFSImpl implements VFS {
 
     private String rootDirectory;
 
-    public VFSImpl(String rootDirectory) {
+    public VFSImpl(@NotNull String rootDirectory) throws NoSuchFileException {
+        if (!Files.exists(Paths.get(rootDirectory))) {
+            throw new NoSuchFileException("File or directory fo path " + rootDirectory + " doesn't exist");
+        }
+
+        if (!Files.isDirectory(Paths.get(rootDirectory))){
+            throw new UnsupportedOperationException("You can't set files as a root directory");
+        }
         this.rootDirectory = rootDirectory;
     }
 
+    @Override
     public boolean isExist(String path) {
-        File file = new File(rootDirectory + path);
-        boolean isExist = file.exists();
-        return isExist;
+        Path resultPath = Paths.get(rootDirectory + path);
+
+        return Files.exists(resultPath);
     }
 
-    public boolean isDirectory(String path) throws FileNotFoundException {
-        File file = new File(rootDirectory + path);
+    @Override
+    public boolean isDirectory(String path) throws NoSuchFileException {
+        Path resultPath = Paths.get(rootDirectory + path);
 
-        if (file.exists()) {
-            return file.isDirectory();
+        if (Files.exists(resultPath)) {
+            return Files.isDirectory(resultPath);
         } else {
             String exceptionMessage = "File for path " + rootDirectory + path + " doesn't exist";
-            throw new FileNotFoundException(exceptionMessage);
+            throw new NoSuchFileException(exceptionMessage);
         }
     }
 
-    public String getAbsolutePath(String fileName) throws FileNotFoundException {
-        File file = new File(rootDirectory + fileName);
-        if (file.exists()) {
-            return file.getAbsolutePath();
+    @Override
+    public String getAbsolutePath(String path) throws NoSuchFileException {
+        Path resultPath = Paths.get(rootDirectory + path);
+        if (Files.exists(resultPath)) {
+            return resultPath.toAbsolutePath().toString();
         } else {
-            String exceptionMessage = "File for path " + rootDirectory + fileName + " doesn't exist";
-            throw new FileNotFoundException(exceptionMessage);
+            String exceptionMessage = "File for path " + rootDirectory + path + " doesn't exist";
+            throw new NoSuchFileException(exceptionMessage);
         }
     }
 
-    public byte[] getBytes(String fileName) throws FileNotFoundException {
+    @Override
+    public byte[] getBytes(String fileName) throws NoSuchFileException {
 
-        if (isExist(fileName)) {
+        Path resultPath = Paths.get(rootDirectory + fileName);
+
+        if (Files.isDirectory(resultPath)) {
+            throw new UnsupportedOperationException("This operation can't be apply for directories");
+        }
+
+        if (Files.exists(resultPath)) {
             try (RandomAccessFile accessFile = new RandomAccessFile(rootDirectory + fileName, "r");
                  FileChannel inChannel = accessFile.getChannel()) {
 
                 List<Byte> list = new ArrayList<>();
-                ByteBuffer buffer = ByteBuffer.allocate(1024);
+
+                ByteBuffer buffer = ByteBuffer.allocate(128);
                 int byteReads = inChannel.read(buffer);
 
                 while (byteReads != -1) {
@@ -83,18 +104,25 @@ public class VFSImpl implements VFS {
 
         } else {
             String exceptionMessage = "File for path " + rootDirectory + fileName + " doesn't exist";
-            throw new FileNotFoundException(exceptionMessage);
+            throw new NoSuchFileException(exceptionMessage);
         }
     }
 
-    public String getUTF8Text(String fileName) throws FileNotFoundException {
+    @Override
+    public String getUTF8Text(String fileName) throws NoSuchFileException {
 
-        if (isExist(fileName)) {
+        Path resultPath = Paths.get(rootDirectory + fileName);
+
+        if (Files.isDirectory(resultPath)) {
+            throw new UnsupportedOperationException("This operation can't be apply for directories ");
+        }
+
+        if (Files.exists(resultPath)) {
             try (RandomAccessFile file = new RandomAccessFile(rootDirectory + fileName, "r");
                  FileChannel inChannel = file.getChannel()) {
 
                 StringBuilder stringBuilder = new StringBuilder();
-                ByteBuffer buffer = ByteBuffer.allocate(1024);
+                ByteBuffer buffer = ByteBuffer.allocate(128);
                 int bytesRead = inChannel.read(buffer);
 
                 while (bytesRead != -1) {
@@ -116,11 +144,22 @@ public class VFSImpl implements VFS {
             }
         } else {
             String exceptionMessage = "File for path " + rootDirectory + fileName + " doesn't exist";
-            throw new FileNotFoundException(exceptionMessage);
+            throw new NoSuchFileException(exceptionMessage);
         }
     }
 
-    public Iterator<String> getIterator(String startDirectory) throws FileNotFoundException {
+    @Override
+    public Iterator<String> getIterator(String startDirectory) throws NoSuchFileException {
         return new FileIterator(startDirectory);
+    }
+
+    @Override
+    public String getRootDirectory() {
+        return rootDirectory;
+    }
+
+    @Override
+    public void setRootDirectory(String rootDirectory) {
+        this.rootDirectory = rootDirectory;
     }
 }
