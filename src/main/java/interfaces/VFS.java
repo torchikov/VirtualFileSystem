@@ -27,5 +27,9 @@ public interface VFS {
 
     int deleteFilesIfExist(String... files) throws IOException;
 
+    boolean createDirectory(String directoryName) throws IOException;
+
+    int createFiles(String directory, String[] names, boolean overrideExists) throws IOException;
+
 
 }

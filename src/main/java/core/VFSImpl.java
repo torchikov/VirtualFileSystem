@@ -183,15 +183,64 @@ public class VFSImpl implements VFS {
 
         Path path = null;
 
-        for (String file :
-                files) {
+        for (String file : files) {
             path = Paths.get(rootDirectory + file);
-            if (Files.exists(path)){
-                Files.delete(path);
+
+            if (Files.deleteIfExists(path)) {
                 deletedFiles++;
             }
         }
         return deletedFiles;
+    }
+
+    @Override
+    public boolean createDirectory(@NotNull String directoryPath) throws IOException {
+        Path path = Paths.get(directoryPath);
+        boolean result;
+
+        try {
+            Files.createDirectory(path);
+            result = true;
+            return result;
+        } catch (FileAlreadyExistsException e) {
+            result = false;
+            return result;
+        }
+    }
+
+    @Override
+    public int createFiles(@NotNull String directory, @NotNull String[] names, boolean overrideExists) throws IOException {
+        int createdFiles = 0;
+
+        if (names.length == 0) {
+            return 0;
+        }
+
+        if (!directory.endsWith("/")){
+            directory = directory + "/";
+        }
+
+        if (Files.notExists(Paths.get(directory))){
+            throw new NoSuchFileException("Directory " + directory + " doesn't exits");
+        }
+
+        Path path = null;
+
+        for (String file : names) {
+            path = Paths.get(directory + file);
+
+            try {
+                Files.createFile(path);
+                createdFiles++;
+            } catch (FileAlreadyExistsException e) {
+                if (overrideExists){
+                    Files.delete(path);
+                    Files.createFile(path);
+                    createdFiles++;
+                }
+            }
+        }
+        return createdFiles;
     }
 
     @Override
