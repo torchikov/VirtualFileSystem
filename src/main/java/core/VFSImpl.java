@@ -173,6 +173,28 @@ public class VFSImpl implements VFS {
     }
 
     @Override
+    public int deleteFilesIfExist(String... files) throws IOException {
+
+        if (files.length == 0){
+            return 0;
+        }
+
+        int deletedFiles = 0;
+
+        Path path = null;
+
+        for (String file :
+                files) {
+            path = Paths.get(rootDirectory + file);
+            if (Files.exists(path)){
+                Files.delete(path);
+                deletedFiles++;
+            }
+        }
+        return deletedFiles;
+    }
+
+    @Override
     public String getRootDirectory() {
         return rootDirectory;
     }

@@ -25,5 +25,7 @@ public interface VFS {
 
     List<String> getContentsFromDirectory(String directory) throws IOException;
 
+    int deleteFilesIfExist(String... files) throws IOException;
+
 
 }
